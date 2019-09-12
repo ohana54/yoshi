@@ -17,7 +17,7 @@ const workerFilePath = path.join(process.env.TEST_DIRECTORY, 'src/worker.ts');
 
 const originalServerContent = fs.readFileSync(serverFilePath, 'utf-8');
 
-describe.skip('hmr', () => {
+describe('hmr', () => {
   describe('client side', () => {
     it('reloads the browser on javascript changes', async () => {
       await initTest('css-inclusion');
@@ -98,7 +98,7 @@ describe.skip('hmr', () => {
     });
   });
 
-  describe('web worker side', () => {
+  describe.skip('web worker side', () => {
     it('refresh the browser after changes in the web-worker', async () => {
       const originalLog = 'hello from a web worker';
       const overriddenLog = 'hello from the other side';
