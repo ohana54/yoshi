@@ -1,6 +1,6 @@
 module.exports = {
   testMatch: ['**/__tests__/**/*.test.(js|ts)'],
-  testResultsProcessor: 'jest-teamcity-reporter',
+  testResultsProcessor: 'jest-teamcity',
   testPathIgnorePatterns: [
     '/packages/create-yoshi-app/templates/',
     '/build/',

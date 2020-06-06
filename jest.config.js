@@ -3,7 +3,7 @@ module.exports = {
   runner: './config/serial-runner.js',
   rootDir: './test',
   verbose: true,
-  testResultsProcessor: 'jest-teamcity-reporter',
+  testResultsProcessor: 'jest-teamcity',
   testMatch: ['**/*.test.ts'],
   testPathIgnorePatterns: ['/node_modules/'],
   globalSetup: require.resolve('./test/globalSetup.ts'),

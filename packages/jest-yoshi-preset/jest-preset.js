@@ -215,7 +215,7 @@ const config = {
 };
 
 if (inTeamCity()) {
-  config.testResultsProcessor = require.resolve('jest-teamcity-reporter');
+  config.testResultsProcessor = require.resolve('jest-teamcity');
 }
 
 module.exports = config;

@@ -114,7 +114,7 @@
     "jest-environment-puppeteer": "^3.4.0",
     "jest-puppeteer": "^4.0.0",
     "jest-runner": "^24.1.0",
-    "jest-teamcity-reporter": "^0.9.0",
+    "jest-teamcity": "^1.7.0",
     "lerna": "^3.15.0",
     "lerna-changelog": "^0.8.3",
     "lint-staged": "^10.0.7",
