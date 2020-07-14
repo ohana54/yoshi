@@ -216,8 +216,8 @@ function calculatePublicPath({
 
   // In case we are running in CI and there is a pom.xml file, change the public path according to the path on the cdn
   // The path is created using artifactName from pom.xml and artifact version from an environment param.
-  if (shouldDeployToCDN()) {
-    publicPath = getProjectCDNBasePath(useUnversionedBaseUrl);
+  if (shouldDeployToCDN(appName)) {
+    publicPath = getProjectCDNBasePath(appName, useUnversionedBaseUrl);
   }
 
   return publicPath;
