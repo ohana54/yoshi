@@ -93,7 +93,6 @@ export default class Scripts {
     testDirectory: string;
     isMonorepo: boolean;
     projectType: ProjectType;
-    packageName: string;
     yoshiBinToUse: string;
     ignoreWarnings: boolean;
   }) {
@@ -234,7 +233,6 @@ export default class Scripts {
       testDirectory: featureDir,
       isMonorepo,
       projectType,
-      packageName: newPackageJSONfileContents.name,
       yoshiBinToUse,
       ignoreWarnings,
     });
