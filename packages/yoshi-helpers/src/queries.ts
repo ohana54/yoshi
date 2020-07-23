@@ -3,9 +3,11 @@ import fs from 'fs';
 import globby from 'globby';
 import config from 'yoshi-config';
 import * as globs from 'yoshi-config/build/globs';
-import { POM_FILE } from 'yoshi-config/build/paths';
 import isCi from 'is-ci';
+import { getBuildInfo } from '@wix/ci-build-info';
 import { defaultEntry } from './constants';
+
+export { getBuildInfo };
 
 export const exists = (
   patterns: string | ReadonlyArray<string>,
@@ -80,12 +82,8 @@ export const hasBundleInStaticsDir = (cwd = process.cwd()) => {
   );
 };
 
-export const shouldDeployToCDN = () => {
-  return (
-    isCi &&
-    (process.env.ARTIFACT_VERSION || process.env.SRC_MD5) &&
-    fs.existsSync(POM_FILE)
-  );
+export const shouldDeployToCDN = (packageName: string) => {
+  return isCi && !!getBuildInfo().v1.packages[packageName].artifact?.cdnUrl;
 };
 
 export const isWebWorkerBundle = !!config.webWorkerEntry;

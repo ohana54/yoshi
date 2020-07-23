@@ -11,8 +11,7 @@ import { POM_FILE } from 'yoshi-config/build/paths';
 import xmldoc from 'xmldoc';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Stats } from 'webpack';
-import { inTeamCity } from './queries';
-import { staticsDomain } from './constants';
+import { inTeamCity, getBuildInfo } from './queries';
 
 export function logIfAny(log: any) {
   if (log) {
@@ -192,12 +191,20 @@ export const getProjectArtifactId = (cwd = process.cwd()) => {
   return '';
 };
 
-export const getServerlessScope = (cwd = process.cwd()) => {
-  return (
-    getProjectArtifactId(cwd) +
-    '-' +
-    (getProjectArtifactVersion()?.replace(/\./g, '-') || '0-0-0')
-  );
+export const getServerlessScope = (
+  packageName: string,
+  cwd = process.cwd(),
+) => {
+  const artifactVersion = inTeamCity()
+    ? getProjectArtifactVersion(packageName).replace(/\./g, '-')
+    : '0-0-0';
+
+  return getProjectArtifactId(cwd) + '-' + artifactVersion;
+};
+
+export const getDevServerlessScope = (cwd = process.cwd()) => {
+  const artifactVersion = '0-0-0';
+  return getProjectArtifactId(cwd) + '-' + artifactVersion;
 };
 
 export const serverlessPort = '3000';
@@ -215,19 +222,22 @@ export const getServerlessBase = (scope: string) => {
   return `/serverless-yoshi-sandbox1/${scope}`;
 };
 
-export const getProjectArtifactVersion = () => {
-  return process.env.ARTIFACT_VERSION
-    ? // Dev CI
-      process.env.ARTIFACT_VERSION.replace('-SNAPSHOT', '')
-    : // PR CI won't have a version, only SRC_MD5
-      process.env.SRC_MD5;
+export const getProjectArtifactVersion = (packageName: string) => {
+  return getBuildInfo().v1.packages[packageName].fingerprint;
 };
 
 // Gets the CDN base path for the project at the current working dir
-export const getProjectCDNBasePath = (useUnversionedBaseUrl: boolean) => {
-  const artifactName = getProjectArtifactId();
+export const getProjectCDNBasePath = (
+  packageName: string,
+  useUnversionedBaseUrl: boolean,
+) => {
+  const cdnUrl = getBuildInfo().v1.packages[packageName].artifact?.cdnUrl;
 
-  let artifactPath;
+  if (!cdnUrl) {
+    throw new Error(
+      'Cannot get the CDN path for a package that has no static artifact',
+    );
+  }
 
   if (useUnversionedBaseUrl) {
     // Not to be confused with Yoshi's `dist` directory.
@@ -239,12 +249,9 @@ export const getProjectCDNBasePath = (useUnversionedBaseUrl: boolean) => {
     //
     // If this experimental feature is enabled, we can benefit from better caching by configuring
     // Webpack's `publicUrl` to use the first option.
-    artifactPath = 'dist';
-  } else {
-    artifactPath = getProjectArtifactVersion() || '';
+    return cdnUrl.unversioned;
   }
-
-  return `${staticsDomain}/${artifactName}/${artifactPath}/`;
+  return cdnUrl.versioned;
 };
 
 export const killSpawnProcessAndHisChildren = (child: ChildProcess) => {

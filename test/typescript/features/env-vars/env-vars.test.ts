@@ -36,7 +36,7 @@ describe.each(['prod', 'dev'] as const)('env-vars [%s]', (mode) => {
       if (mode === 'dev') {
         expect(result).toEqual('0.0.0');
       } else {
-        expect(result).toEqual('1.0.0-SNAPSHOT');
+        expect(result).toEqual('1.0.0');
       }
     });
   });

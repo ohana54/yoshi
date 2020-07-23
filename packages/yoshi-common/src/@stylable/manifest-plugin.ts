@@ -3,6 +3,7 @@ import {
   stripOrganization,
   getProjectArtifactVersion,
 } from 'yoshi-helpers/build/utils';
+import { inTeamCity as checkInTeamCity } from 'yoshi-helpers/build/queries';
 import { resolveNamespaceFactory } from './node';
 
 /**
@@ -17,6 +18,7 @@ export const getStylableManifestPlugin = (name: string) => {
    */
   const COMPONENT_STYLESHEET_CONVENTION = /\.component\.st\.css$/;
   try {
+    const inTeamCity = checkInTeamCity();
     // expected to be installed on the project that tests stylable-loader experimental feature
     // eslint-disable-next-line import/no-extraneous-dependencies
     const {
@@ -25,7 +27,7 @@ export const getStylableManifestPlugin = (name: string) => {
     return new StylableManifestPlugin({
       package: {
         name,
-        version: getProjectArtifactVersion() || '0.0.0',
+        version: inTeamCity ? getProjectArtifactVersion(name) : '0.0.0',
       },
       outputType: 'fs-manifest',
       resolveNamespace: resolveNamespaceFactory(name),

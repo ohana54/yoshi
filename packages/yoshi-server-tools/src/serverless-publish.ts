@@ -30,7 +30,7 @@ export default async function publishServerless(config: Config) {
   );
 
   console.log('Deploy command:');
-  console.log(`deploy #serverless ${getServerlessScope()}`);
+  console.log(`deploy #serverless ${getServerlessScope(config.name)}`);
   const git = simpleGit(__dirname);
 
   console.log('cloning git@github.com:wix-a/yoshi-serverless.git');
@@ -44,24 +44,30 @@ export default async function publishServerless(config: Config) {
   fs.copySync(path.resolve('serverless'), path.resolve('temp/serverless'));
   if (Object.keys(dependencies).length) {
     fs.writeFileSync(
-      path.resolve(`temp/serverless/${getServerlessScope()}/package.json`),
+      path.resolve(
+        `temp/serverless/${getServerlessScope(config.name)}/package.json`,
+      ),
       JSON.stringify({ dependencies }, null, 2),
     );
   }
   await git.cwd(path.resolve('temp'));
   await git.add('serverless/*');
-  await git.commit(`deploy ${getServerlessScope()}`, '--no-verify');
+  await git.commit(`deploy ${getServerlessScope(config.name)}`, '--no-verify');
   await git.push('origin', 'master');
   // deploy to Yoshi Serverless sandbox
   fetch(
-    `https://bo.wix.com/yoshi-serverless-deploy-facade/moveDeploymentToArtifact/${getServerlessScope()}`,
+    `https://bo.wix.com/yoshi-serverless-deploy-facade/moveDeploymentToArtifact/${getServerlessScope(
+      config.name,
+    )}`,
   );
   // Wait for Publish to Serverless to be finished
   await retry(
     async () => {
       console.log('Ping to check if Service is up');
       const res = await fetch(
-        `http://www.wix.com${getServerlessBase(getServerlessScope())}/_api_`,
+        `http://www.wix.com${getServerlessBase(
+          getServerlessScope(config.name),
+        )}/_api_`,
       );
       const resStatus = await res?.status;
 

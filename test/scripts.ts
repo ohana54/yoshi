@@ -4,7 +4,9 @@ import fetch from 'node-fetch';
 import fs from 'fs-extra';
 import defaultsDeep from 'lodash/defaultsDeep';
 import retry from 'async-retry';
-import { getServerlessScope } from '../packages/yoshi-helpers/build/utils';
+import globby from 'globby';
+import { testkit as ciBuildInfoTestkit } from '@wix/ci-build-info';
+import { getDevServerlessScope } from '../packages/yoshi-helpers/build/utils';
 import { ciEnv, localEnv } from '../scripts/utils/constants';
 import serve from '../packages/yoshi-common/serve';
 import writeJson from '../packages/yoshi-common/build/write-json';
@@ -52,6 +54,19 @@ type ScriptOpts = {
   waitForStorybook?: boolean;
 };
 
+function createCiBuildInfo(rootDir: string, isMonorepo: boolean) {
+  const packages = isMonorepo
+    ? globby
+        .sync(path.join(rootDir, 'packages/*'), { onlyFiles: false })
+        .map((path) => ({ path }))
+    : [{ path: rootDir }];
+  const result = ciBuildInfoTestkit.createBuildInfo({
+    packages,
+  });
+
+  return result;
+}
+
 export default class Scripts {
   private readonly verbose: boolean;
   public readonly testDirectory: string;
@@ -59,13 +74,14 @@ export default class Scripts {
   private readonly staticsServerPort: number;
   private readonly storybookServerPort: number;
   public readonly serverUrl: string;
-  public readonly serverlessUrl: string;
+  public readonly serverlessDevUrl: string;
   private readonly yoshiPublishDir: string;
   public readonly staticsServerUrl: string;
   private readonly isMonorepo: boolean;
   private readonly projectType: ProjectType;
   private readonly yoshiBinToUse: string;
   private readonly ignoreWarnings: boolean;
+  private readonly ciBuildInfoEnv: Record<string, string>;
 
   constructor({
     testDirectory,
@@ -80,6 +96,11 @@ export default class Scripts {
     yoshiBinToUse: string;
     ignoreWarnings: boolean;
   }) {
+    const { env: ciBuildInfoEnv } = createCiBuildInfo(
+      testDirectory,
+      isMonorepo,
+    );
+    this.ciBuildInfoEnv = ciBuildInfoEnv;
     this.ignoreWarnings = ignoreWarnings;
     this.verbose = !!process.env.DEBUG;
     this.testDirectory = testDirectory;
@@ -87,9 +108,18 @@ export default class Scripts {
     this.staticsServerPort = projectType === 'flow-library' ? 3300 : 3200;
     this.storybookServerPort = 9009;
     this.serverUrl = `http://localhost:${this.serverProcessPort}`;
-    this.serverlessUrl = `http://localhost:${
+    /*
+      We use this specialized `getDevServerlessScope` function instead of `getServerlessScope`
+      because `getServerlessScope` automatically detects the environment (local/ci) and creates
+      the scope according to that. But - the tests for serverless are running in the "local"
+      environment (they run yoshi with environment variables simulating the local env),
+      therefore they always need to use the dev scope. If we would've used `getServerlessScope` here,
+      when these tests would run in CI - there will be a mismatch - since `getServerlessScope` will
+      create a production scope, while yoshi (in the test itself) will get the dev scope
+    */
+    this.serverlessDevUrl = `http://localhost:${
       this.serverProcessPort
-    }/serverless/${getServerlessScope(testDirectory)}`;
+    }/serverless/${getDevServerlessScope(testDirectory)}`;
     this.staticsServerUrl = `http://localhost:${this.staticsServerPort}`;
     this.yoshiPublishDir = isPublish
       ? `${global.yoshiPublishDir}/node_modules`
@@ -212,7 +242,7 @@ export default class Scripts {
     // Wait for serverless testkit to be up
     return retry(
       async () => {
-        const res = await fetch(`${this.serverlessUrl}/_api_`);
+        const res = await fetch(`${this.serverlessDevUrl}/_api_`);
 
         const resStatus = await res?.status;
         if (resStatus === 406) {
@@ -421,6 +451,7 @@ export default class Scripts {
           NODE_PATH: this.yoshiPublishDir,
           ...defaultOptions,
           ...env,
+          ...this.ciBuildInfoEnv,
         },
       });
     } catch (e) {
@@ -433,7 +464,10 @@ export default class Scripts {
     callback: TestCallbackWithResult = async () => {},
     opts: ScriptOpts & { staticsDir?: string } = {},
   ) {
-    const buildResult = await this.build({ ...ciEnv, ...opts.env }, opts.args);
+    const buildResult = await this.build(
+      { ...ciEnv, ...opts.env, ...this.ciBuildInfoEnv },
+      opts.args,
+    );
 
     const staticsServerProcess = execa(
       'npx',

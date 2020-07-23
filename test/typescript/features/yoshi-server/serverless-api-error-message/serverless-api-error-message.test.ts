@@ -20,7 +20,7 @@ describe.each(['dev'] as const)(
         // fails tests in case of an error while navigation
         page = await browser.newPage();
 
-        await page.goto(`${scripts.serverlessUrl}/app`);
+        await page.goto(`${scripts.serverlessDevUrl}/app`);
         await page.waitForSelector('.popover');
         expect(await page.$eval('.popover', (el) => el.innerHTML)).toMatch(
           'A cool error',

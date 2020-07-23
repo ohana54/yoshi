@@ -10,7 +10,7 @@ const { verifyRegistry } = require('../src/index');
 const { isOutOfIframe, isAppBuilder, isBMFlow } = require('../src/utils');
 const TemplateModel = require('../src/TemplateModel').default;
 const { publishMonorepo } = require('../../../scripts/utils/publishMonorepo');
-const { testRegistry } = require('../../../scripts/utils/constants');
+const { testRegistry, localEnv } = require('../../../scripts/utils/constants');
 const templates = require('../src/templates').default;
 
 // A regex pattern to run a focus test on the matched projects types
@@ -106,7 +106,10 @@ const testTemplate = (mockedAnswers) => {
           shell: true,
           all: true,
           cwd: testDirectory,
-          env,
+          // Make sure yoshi doesn't run in CI mode, which requires simulating
+          // the CI environment. If it is needed in the future, we can use
+          // @wix/ci-build-info testkit like we do in test/scripts.ts
+          env: Object.assign({}, env, localEnv),
         });
       } catch (err) {
         console.error(err.all);
