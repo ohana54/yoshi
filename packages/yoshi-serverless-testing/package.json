@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@wix/serverless-testkit": "^1.0.0",
+    "yoshi-config": "4.133.0",
     "yoshi-helpers": "4.133.0"
   },
   "peerDependencies": {
